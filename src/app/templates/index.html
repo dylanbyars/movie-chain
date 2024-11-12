@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Path Search</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+  <h1>Movie Path Search</h1>
+
+  <form id="searchForm" class="search-form">
+    <div>
+      <input type="search" id="searchInput" name="query" placeholder="Search for movies or actors..."
+        autocomplete="off">
+      <div id="suggestions"></div>
+    </div>
+
+    <!--<div>-->
+    <!--  <label for="steps">Number of steps:</label>-->
+    <!--  <input type="number" id="steps" min="1" max="10" value="3" required>-->
+    <!--</div>-->
+
+    <button type="submit">Find Path</button>
+  </form>
+
+  <div id="movie-container"></div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="/static/script.js"></script>
+</body>
+
+</html>
