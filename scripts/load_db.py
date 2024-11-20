@@ -3,6 +3,8 @@ import os
 
 from neo4j import GraphDatabase
 
+# Source of the mega csv: https://www.kaggle.com/datasets/alanvourch/tmdb-movies-daily-updates
+
 
 class MovieGraphLoader:
 
@@ -47,7 +49,9 @@ class MovieGraphLoader:
     @staticmethod
     def create_movies_and_actors(tx, csv_file):
         # Split by 'csv' and take the part after
-        chunk = csv_file.split("csv", 1)[ -1 ]  # "-1" gets the part after the first occurrence
+        chunk = csv_file.split("csv", 1)[
+            -1
+        ]  # "-1" gets the part after the first occurrence
         # Remove leading slashes if needed
         chunk = chunk.lstrip("/")
         print(f"Loading data from {chunk}")
