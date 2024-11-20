@@ -9,6 +9,17 @@ Starting from a single movie, a graph is made going from the starting movie to a
 # How to run
 
 1. run `docker compose up --build --detach` to start the neo4j db and the fastapi server
-2. load the csvs in the neo4j db (TODO: how)
+2. load the csvs in the neo4j db 
 3. check the logs of the fastapi container to see the local address where the server is running (should be http://0.0.0.0:8000)
 4. enter a movie title and press `Find Path` to see
+
+# TODO:
+
+- [ ] improve rendering of graph
+- [ ] document how to clean the movie csv 
+- [ ] document how to load the db with the movie chunks
+- [ ] use some other metadata about the movies and actors to augment the kinds of paths that are returned. 
+- [ ] get actor data + clean it + ingest it
+- [ ] script the csv loading process more
+- [ ] make path size configurable
+- [ ] add more search criteria
