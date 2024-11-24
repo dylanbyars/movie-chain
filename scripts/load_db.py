@@ -1,9 +1,10 @@
 import glob
 import os
+import zipfile
+
+import requests
 
 from neo4j import GraphDatabase
-
-# Source of the mega csv: https://www.kaggle.com/datasets/alanvourch/tmdb-movies-daily-updates
 
 
 class MovieGraphLoader:
@@ -22,42 +23,43 @@ class MovieGraphLoader:
     @staticmethod
     def create_constraints(tx):
         # Create unique constraint for Movie based on 'id'
-        # TODO: should it be name? normalized some kind of way?
         tx.run("CREATE CONSTRAINT IF NOT EXISTS FOR (m:Movie) REQUIRE m.id IS UNIQUE")
-
         # Create unique constraint for Actor based on 'name'
         tx.run("CREATE CONSTRAINT IF NOT EXISTS FOR (a:Actor) REQUIRE a.name IS UNIQUE")
 
-    def load_csvs(self, csv_directory):
+    def download_and_extract_csv(self, url, output_dir):
+        # Download the dataset
+        print("Downloading the movie dataset from Kaggle...")
+        response = requests.get(url)
+        zip_file_path = os.path.join(output_dir, "archive.zip")
+
+        with open(zip_file_path, "wb") as f:
+            f.write(response.content)
+
+        print("Unzipping the archive...")
+        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+            zip_ref.extractall(output_dir)
+
+        os.remove(zip_file_path)  # Clean up the zip file
+
+    def process_and_load_csvs(self, csv_directory):
         # Load all CSV files in the directory
         csv_files = glob.glob(os.path.join(csv_directory, "*.csv"))
         print(csv_files)
-        test_file = list(filter(lambda x: "movies_2000s.csv" in x, csv_files))[0]
-        with self.driver.session() as session:
-            print(f"Loading data from test file {test_file}")
-            session.execute_write(self.create_movies_and_actors, test_file)
-            # for csv_file in csv_files:
-            #     decade = self.get_decade_from_filename(csv_file)
-            #     print(f"Loading data from {csv_file} for decade: {decade}")
-            #     session.execute_write(self.create_movies_and_actors, csv_file, decade)
 
-    @staticmethod
-    def get_decade_from_filename(filename):
-        # Extract decade from the filename assuming it follows the pattern "movies_YYYYs.csv"
-        return filename.split("_")[-1].replace("s.csv", "")
+        for csv_file in csv_files:
+            print(f"Processing and loading data from {csv_file}")
+            self.load_csvs(csv_file)
+
+    def load_csvs(self, csv_file):
+        with self.driver.session() as session:
+            session.execute_write(self.create_movies_and_actors, csv_file)
 
     @staticmethod
     def create_movies_and_actors(tx, csv_file):
-        # Split by 'csv' and take the part after
-        chunk = csv_file.split("csv", 1)[
-            -1
-        ]  # "-1" gets the part after the first occurrence
-        # Remove leading slashes if needed
-        chunk = chunk.lstrip("/")
-        print(f"Loading data from {chunk}")
         # Load Movie nodes
         load_movies_query = f"""
-        LOAD CSV WITH HEADERS FROM 'file:///{chunk}' AS row
+        LOAD CSV WITH HEADERS FROM 'file:///{csv_file}' AS row
         MERGE (m:Movie {{id: row.id}})
         SET m.title = row.title,
             m.vote_average = toFloat(row.vote_average),
@@ -79,15 +81,15 @@ class MovieGraphLoader:
         tx.run(load_movies_query)
 
         # Load Actors and Relationships
-        load_actors_query = f"""
-        LOAD CSV WITH HEADERS FROM 'file:///{chunk}' AS row
-        WITH row, split(row.cast, ",") AS actors
-        UNWIND actors AS actor_name
-        MERGE (a:Actor {{name: trim(actor_name)}})
-        MERGE (m:Movie {{id: row.id}})
-        MERGE (a)-[:ACTED_IN]->(m)
-        """
-        tx.run(load_actors_query)
+        # load_actors_query = f"""
+        # LOAD CSV WITH HEADERS FROM 'file:///{csv_file}' AS row
+        # WITH row, split(row.cast, ",") AS actors
+        # UNWIND actors AS actor_name
+        # MERGE (a:Actor {{name: trim(actor_name)}})
+        # MERGE (m:Movie {{id: row.id}})
+        # MERGE (a)-[:ACTED_IN]->(m)
+        # """
+        # tx.run(load_actors_query)
 
 
 if __name__ == "__main__":
@@ -96,12 +98,14 @@ if __name__ == "__main__":
     NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
     NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 
-    # Directory containing the CSV files
-    CSV_DIRECTORY = "src/neo4j/csv/chunks"  # Update to the correct path if needed
+    # Directory to download and extract CSV files
+    OUTPUT_DIRECTORY = "src/neo4j/csv/chunks"  # Update to the correct path if needed
+    CSV_URL = "https://www.kaggle.com/api/v1/datasets/download/alanvourch/tmdb-movies-daily-updates"
 
     loader = MovieGraphLoader(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
     try:
+        loader.download_and_extract_csv(CSV_URL, OUTPUT_DIRECTORY)
         loader.setup_constraints()
-        loader.load_csvs(CSV_DIRECTORY)
+        loader.process_and_load_csvs(OUTPUT_DIRECTORY)
     finally:
         loader.close()
