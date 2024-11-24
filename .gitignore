@@ -6,3 +6,6 @@ src/app/__pycache__
 data_test
 src/neo4j
 .git-komodo
+raw_data
+.DS_Store
+archive.zip
