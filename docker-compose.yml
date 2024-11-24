@@ -11,11 +11,10 @@ services:
       - ./src/neo4j/csv:/import
     environment:
       - NEO4J_AUTH=neo4j/password
-      - NEO4J_dbms_memory_transaction_total_max=4G
-      - NEO4J_dbms_memory_heap_initial__size=2G
-      - NEO4J_dbms_memory_heap_max__size=4G
-      - NEO4J_dbms_memory_pagecache_size=2G
-
+      - NEO4J_dbms_memory_transaction_total_max=8G
+      - NEO4J_dbms_memory_heap_initial__size=4G
+      - NEO4J_dbms_memory_heap_max__size=8G
+      - NEO4J_dbms_memory_pagecache_size=4G
   api:
     stdin_open: true
     tty: true

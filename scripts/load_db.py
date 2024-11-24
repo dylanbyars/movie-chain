@@ -363,9 +363,13 @@ class MovieGraphLoader:
     def create_movies_and_actors(tx, csv_file):
         filename = os.path.basename(csv_file)
         logging.info(f"Loading movies from {filename}.")
-        load_movies_query = f"""
-        LOAD CSV WITH HEADERS FROM 'file:///chunks/{filename}' AS row
-        MERGE (m:Movie {{id: row.id}})
+
+        BATCH_SIZE = 100
+
+        # Define the query once
+        query = """
+        UNWIND $rows AS row
+        MERGE (m:Movie {id: row.id})
         SET m.title = row.title,
             m.vote_average = toFloat(row.vote_average),
             m.vote_count = toInteger(row.vote_count),
@@ -382,8 +386,44 @@ class MovieGraphLoader:
             m.tagline = row.tagline,
             m.genres = split(row.genres, ","),
             m.poster_path = row.poster_path
+        
+        // Create actors and relationships
+        WITH m, row
+        UNWIND split(row.cast, ',') AS actor_name
+        WITH m, trim(actor_name) AS actor_name
+        WHERE actor_name <> ''
+        MERGE (a:Actor {name: actor_name})
+        MERGE (a)-[:ACTED_IN]->(m)
         """
-        tx.run(load_movies_query)
+
+        with open(
+            os.path.join("src/neo4j/csv/chunks", filename), "r", encoding="utf-8"
+        ) as f:
+            reader = csv.DictReader(f)
+            batch = []
+
+            for i, row in enumerate(reader, 1):
+                batch.append(row)
+
+                if len(batch) >= BATCH_SIZE:
+                    try:
+                        tx.run(query, rows=batch)
+                        logging.info(f"Processed {i} rows from {filename}")
+                    except Exception as e:
+                        logging.error(
+                            f"Failed to process batch ending at row {i} in {filename}: {str(e)}"
+                        )
+                    finally:
+                        batch = []
+
+            # Process remaining rows
+            if batch:
+                try:
+                    tx.run(query, rows=batch)
+                except Exception as e:
+                    logging.error(
+                        f"Failed to process final batch in {filename}: {str(e)}"
+                    )
 
 
 if __name__ == "__main__":
