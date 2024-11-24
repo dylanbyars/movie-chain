@@ -364,7 +364,7 @@ class MovieGraphLoader:
         filename = os.path.basename(csv_file)
         logging.info(f"Loading movies from {filename}.")
         load_movies_query = f"""
-        LOAD CSV WITH HEADERS FROM 'file:///{filename}' AS row
+        LOAD CSV WITH HEADERS FROM 'file:///chunks/{filename}' AS row
         MERGE (m:Movie {{id: row.id}})
         SET m.title = row.title,
             m.vote_average = toFloat(row.vote_average),
