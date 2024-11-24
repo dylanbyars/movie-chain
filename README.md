@@ -8,10 +8,20 @@ Starting from a single movie, a graph is made going from the starting movie to a
 
 # How to run
 
-1. run `docker compose up --build --detach` to start the neo4j db and the fastapi server
-2. load the csvs in the neo4j db 
+1. start the containers to start the neo4j db and the fastapi server:
+```sh
+docker compose up --build --detach
+```
+2. load the csvs in the neo4j db. This will download the csvs in a zip, extract the zip to a fil, chunk that file into a few files by decase, and load them into the db. It takes less than 10 minutes to run right now:
+```sh
+uv run ./scripts/load_db.py download extract chunk load
+```
 3. check the logs of the fastapi container to see the local address where the server is running (should be http://0.0.0.0:8000)
 4. enter a movie title and press `Find Path` to see
+
+# Dev Tips
+
+The community edition of Neo4j only allows 1 db. To make new dbs for testing, update the `volumes:` line of the `docker-compose.yaml` file and map a new empty `./data__foo` dir to `/data` in the neo4j container.
 
 # TODO:
 
@@ -20,6 +30,6 @@ Starting from a single movie, a graph is made going from the starting movie to a
 - [ ] document how to load the db with the movie chunks
 - [ ] use some other metadata about the movies and actors to augment the kinds of paths that are returned. 
 - [ ] get actor data + clean it + ingest it
-- [ ] script the csv loading process more
+- [X] script the csv loading process more
 - [ ] make path size configurable
 - [ ] add more search criteria
