@@ -9,3 +9,7 @@ src/neo4j
 raw_data
 .DS_Store
 archive.zip
+movie_loader_errors.log
+data__2024_11_23
+data_backup
+data__2024_11_24

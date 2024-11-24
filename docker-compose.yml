@@ -7,7 +7,9 @@ services:
       - "7687:7687"
     volumes:
       # - ./data:/data
-      - ./data_test:/data
+      # - ./data_test:/data
+      # - ./data__2024_11_23:/data
+      - ./data__2024_11_24:/data
       - ./src/neo4j/csv:/import
     environment:
       - NEO4J_AUTH=neo4j/password
